@@ -1,7 +1,9 @@
 package no.ntnu.gr10.bachelorwebsocket.rabbit;
 
 import lombok.RequiredArgsConstructor;
+import no.ntnu.gr10.bachelorwebsocket.scope.Scope;
 import no.ntnu.gr10.bachelorwebsocket.socket.CompanyEntityWebSocketHandler;
+import no.ntnu.gr10.bachelorwebsocket.socket.WebSocketSessionRegistry;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
@@ -21,8 +23,8 @@ public class RabbitListenerManager {
   private final Map<String, MessageListenerContainer> activeListeners = new ConcurrentHashMap<>();
 
   // Creates a RabbitMQ listener for the specified companyId-entity pair
-  public void createRabbitListener(String companyId, RabbitEntity entity) {
-    String dynamicQueueName = RabbitQueueUtils.getDynamicQueueName(companyId, entity.toString());
+  public void createRabbitListener(String companyId, Scope scope, RabbitQueueType queueType, CompanyEntityWebSocketHandler handler) {
+    String dynamicQueueName = RabbitQueueUtils.getDynamicQueueName(companyId, scope.toString(), queueType);
 
     // Create the RabbitMQ queue if it doesn't exist
     RabbitAdmin rabbitAdmin = new RabbitAdmin(connectionFactory);
@@ -37,39 +39,32 @@ public class RabbitListenerManager {
     // Set the message listener
     container.setMessageListener(message -> {
       String messageJson = new String(message.getBody());
-      processMessage(messageJson, companyId, entity);
+      processMessage(messageJson, companyId, handler);
     });
 
     // Start the listener container
     container.start();
-    activeListeners.put(generateKey(companyId, entity), container);
+    activeListeners.put(dynamicQueueName, container);
 
     System.out.println("Listener created for queue: " + dynamicQueueName);
   }
 
   // Stops the RabbitMQ listener for the specified companyId-entity pair
-  public void stopRabbitListener(String companyId, RabbitEntity entity) {
-    String key = generateKey(companyId, entity);
-    MessageListenerContainer container = activeListeners.remove(key);
+  public void stopRabbitListener(String companyId, Scope scope, RabbitQueueType queueType) {
+    String dynamicQueueName = RabbitQueueUtils.getDynamicQueueName(companyId, scope.toString(), queueType);
+    MessageListenerContainer container = activeListeners.remove(dynamicQueueName);
     if (container != null) {
       container.stop();
-      System.out.println("Listener stopped for queue: " + generateKey(companyId, entity));
+      System.out.println("Listener stopped for queue: " + dynamicQueueName);
     }
   }
 
   // Process the RabbitMQ message
-  private void processMessage(String messageJson, String companyId, RabbitEntity entity) {
+  private void processMessage(String messageJson, String companyId, CompanyEntityWebSocketHandler handler) {
     try {
-      // Handle the received message (e.g., broadcasting to WebSocket)
-      CompanyEntityWebSocketHandler handler = new CompanyEntityWebSocketHandler(null, entity);
       handler.broadcastToCompany(companyId, messageJson);
     } catch (Exception e) {
       e.printStackTrace();
     }
-  }
-
-  // Helper method to generate a unique key based on companyId and entity
-  private String generateKey(String companyId, RabbitEntity entity) {
-    return companyId + ":" + entity;
   }
 }

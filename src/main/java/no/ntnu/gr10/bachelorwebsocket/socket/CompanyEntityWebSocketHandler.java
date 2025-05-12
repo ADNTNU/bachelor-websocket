@@ -1,6 +1,7 @@
 package no.ntnu.gr10.bachelorwebsocket.socket;
 
-import no.ntnu.gr10.bachelorwebsocket.rabbit.RabbitEntity;
+import no.ntnu.gr10.bachelorwebsocket.rabbit.RabbitQueueType;
+import no.ntnu.gr10.bachelorwebsocket.scope.Scope;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -13,11 +14,11 @@ import java.util.Objects;
 public class CompanyEntityWebSocketHandler extends TextWebSocketHandler {
 
   private final WebSocketSessionRegistry registry;
-  private final RabbitEntity entityType;
+  private final Scope scope;
 
-  public CompanyEntityWebSocketHandler(WebSocketSessionRegistry registry, RabbitEntity entity) {
+  public CompanyEntityWebSocketHandler(WebSocketSessionRegistry registry, Scope scope) {
     this.registry = registry;
-    this.entityType = entity;
+    this.scope = scope;
   }
 
   @Override
@@ -28,19 +29,19 @@ public class CompanyEntityWebSocketHandler extends TextWebSocketHandler {
       return;
     }
 
-    registry.register(companyId, entityType, session);
+    registry.register(companyId, scope, RabbitQueueType.CREATE, session, this);
   }
 
   @Override
   public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
     String companyId = extractCompanyId(session);
     if (companyId != null) {
-      registry.unregister(companyId, entityType, session);
+      registry.unregister(companyId, scope, RabbitQueueType.CREATE, session);
     }
   }
 
   public void broadcastToCompany(String companyId, String message) {
-    for (WebSocketSession session : registry.getSessions(companyId, entityType)) {
+    for (WebSocketSession session : registry.getSessions(companyId, scope)) {
       if (session.isOpen()) {
         try {
           session.sendMessage(new TextMessage(message));

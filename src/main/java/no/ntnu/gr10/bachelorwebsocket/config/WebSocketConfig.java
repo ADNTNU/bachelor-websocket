@@ -1,7 +1,7 @@
 package no.ntnu.gr10.bachelorwebsocket.config;
 
 
-import no.ntnu.gr10.bachelorwebsocket.rabbit.RabbitEntity;
+import no.ntnu.gr10.bachelorwebsocket.scope.Scope;
 import no.ntnu.gr10.bachelorwebsocket.socket.CompanyEntityWebSocketHandler;
 import no.ntnu.gr10.bachelorwebsocket.socket.WebSocketSessionRegistry;
 import org.springframework.context.annotation.Configuration;
@@ -22,7 +22,8 @@ public class WebSocketConfig implements WebSocketConfigurer {
   @Override
   public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
     registry
-            .addHandler(new CompanyEntityWebSocketHandler(this.registry, RabbitEntity.FISHERY_ACTIVITY), "/ws/data/fishery-activity")
+            .addHandler(new CompanyEntityWebSocketHandler(this.registry, Scope.FISHERY_ACTIVITY), "/ws/data/fishery-activity")
+            .addHandler(new CompanyEntityWebSocketHandler(this.registry, Scope.FISHING_FACILITY), "/ws/data/fishing-facility")
             .setAllowedOrigins("*");
   }
 }
