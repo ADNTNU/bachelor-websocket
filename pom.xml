@@ -70,6 +70,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
         </plugins>
+        <finalName>BachelorWebsocketApplication</finalName>
     </build>
 
 </project>
