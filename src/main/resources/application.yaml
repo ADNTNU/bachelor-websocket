@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: bachelor-websocket
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DB_USERNAME:devuser}
+    password: ${DB_PASSWORD:devpass123}
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3307}/${DB_NAME:dev}
+  jpa:
+    hibernate:
+      ddl-auto: ${DDL:create}
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:user}
+    password: ${RABBITMQ_PASSWORD:password}
+# If you want to see the SQL queries executed by the framework, uncomment the
+# next line:
+#  jpa:
+#    show-sql: true
+
+server:
+  port: ${PORT:8086}
